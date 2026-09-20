@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="../HeladeriaAPI.Query/HeladeriaAPI.Query.csproj" />
+  <Project Path="../HeladeriaAPI.Repository/HeladeriaAPI.Repository.csproj" />
+  <Project Path="HeladeriaAPI.csproj" />
+  <Project Path="HeladeriaAPI.Models/HeladeriaAPI.Models.csproj" />
+</Solution>
