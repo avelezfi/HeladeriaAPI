@@ -1,10 +1,31 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
+using System.Data;
+using System.Threading.Tasks;
+using Dapper;
+using HeladeriaAPI.Models;
+using HeladeriaAPI.Query.Interfaces;
 
 namespace HeladeriaAPI.Query.Implements
 {
-    internal class CategoriaQueries
+    public class CategoriaQueries : ICategoriaQueries
     {
+        private readonly IDbConnection _conexion;
+
+        public CategoriaQueries(IDbConnection conexion)
+        {
+            _conexion = conexion;
+        }
+
+        public async Task<IEnumerable<Categoria>> ObtenerTodasAsync()
+        {
+            const string sql = "SELECT * FROM Categoria";
+            return await _conexion.QueryAsync<Categoria>(sql);
+        }
+
+        public async Task<Categoria> ObtenerPorIdAsync(int id)
+        {
+            const string sql = "SELECT * FROM Categoria WHERE Id = @Id";
+            return await _conexion.QueryFirstOrDefaultAsync<Categoria>(sql, new { Id = id });
+        }
     }
 }
