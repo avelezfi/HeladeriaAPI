@@ -18,13 +18,13 @@ namespace HeladeriaAPI.Query.Implements
 
         public async Task<IEnumerable<Categoria>> ObtenerTodasAsync()
         {
-            const string sql = "SELECT * FROM Categoria";
+            const string sql = "SELECT CategoriaId, Nombre FROM Categorias";
             return await _conexion.QueryAsync<Categoria>(sql);
         }
 
         public async Task<Categoria> ObtenerPorIdAsync(int id)
         {
-            const string sql = "SELECT * FROM Categoria WHERE Id = @Id";
+            const string sql = "SELECT CategoriaId, Nombre FROM Categorias WHERE CategoriaId = @Id";
             return await _conexion.QueryFirstOrDefaultAsync<Categoria>(sql, new { Id = id });
         }
     }
