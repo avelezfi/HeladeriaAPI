@@ -1,3 +1,4 @@
+using System.Data;
 using Dapper;
 using HeladeriaAPI.Models;
 using HeladeriaAPI.Query.Interfaces;
@@ -9,11 +10,11 @@ namespace HeladeriaAPI.Query.Implements
     /// </summary>
     public class PedidoQueries : IPedidoQueries
     {
-        private readonly IConexionFactory _conexionFactory;
+        private readonly IDbConnection _conexion;
 
-        public PedidoQueries(IConexionFactory conexionFactory)
+        public PedidoQueries(IDbConnection conexion)
         {
-            _conexionFactory = conexionFactory;
+            _conexion = conexion;
         }
 
         /// <summary>
@@ -26,8 +27,7 @@ namespace HeladeriaAPI.Query.Implements
                 FROM Pedidos
                 ORDER BY Fecha DESC;";
 
-            using var conexion = _conexionFactory.CrearConexion();
-            return await conexion.QueryAsync<Pedido>(sql);
+            return await _conexion.QueryAsync<Pedido>(sql);
         }
 
         /// <summary>
@@ -40,8 +40,7 @@ namespace HeladeriaAPI.Query.Implements
                 FROM Pedidos
                 WHERE PedidoId = @Id;";
 
-            using var conexion = _conexionFactory.CrearConexion();
-            return await conexion.QuerySingleOrDefaultAsync<Pedido>(sql, new { Id = id });
+            return await _conexion.QueryFirstOrDefaultAsync<Pedido>(sql, new { Id = id });
         }
 
         /// <summary>
@@ -56,8 +55,7 @@ namespace HeladeriaAPI.Query.Implements
                 WHERE Estado = @Estado
                 ORDER BY Fecha ASC;";
 
-            using var conexion = _conexionFactory.CrearConexion();
-            return await conexion.QueryAsync<Pedido>(sql, new { Estado = estado });
+            return await _conexion.QueryAsync<Pedido>(sql, new { Estado = estado });
         }
 
         /// <summary>
@@ -71,8 +69,7 @@ namespace HeladeriaAPI.Query.Implements
                 WHERE MesaId = @MesaId
                 ORDER BY Fecha DESC;";
 
-            using var conexion = _conexionFactory.CrearConexion();
-            return await conexion.QueryAsync<Pedido>(sql, new { MesaId = mesaId });
+            return await _conexion.QueryAsync<Pedido>(sql, new { MesaId = mesaId });
         }
 
         /// <summary>
@@ -87,8 +84,7 @@ namespace HeladeriaAPI.Query.Implements
                 WHERE PedidoId = @PedidoId
                 ORDER BY DetallePedidoId;";
 
-            using var conexion = _conexionFactory.CrearConexion();
-            return await conexion.QueryAsync<DetallePedido>(sql, new { PedidoId = pedidoId });
+            return await _conexion.QueryAsync<DetallePedido>(sql, new { PedidoId = pedidoId });
         }
     }
 }
