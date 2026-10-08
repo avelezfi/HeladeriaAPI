@@ -1,4 +1,9 @@
+using System.Data;
 using System.Reflection;
+using HeladeriaAPI.Query.Implements;
+using HeladeriaAPI.Query.Interfaces;
+using HeladeriaAPI.Repository.Implements;
+using HeladeriaAPI.Repository.Interfaces;
 
 namespace HeladeriaAPI
 {
@@ -8,7 +13,6 @@ namespace HeladeriaAPI
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
             builder.Services.AddControllers();
 
             // Swagger con comentarios XML
@@ -19,12 +23,29 @@ namespace HeladeriaAPI
                 c.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFile));
             });
 
-            // TODO: registrar aquí ConexionFactory, Queries y Repositories
-            // cuando los compañeros suban su código.
+            // Conexión a la base de datos
+            var cadenaConexion = builder.Configuration.GetConnectionString("DefaultConnection")
+                ?? throw new InvalidOperationException(
+                    "Falta ConnectionStrings:DefaultConnection en appsettings.json");
+
+            builder.Services.AddSingleton<IConexionFactory>(new ConexionFactory(cadenaConexion));
+
+            // Los Repositories reciben un IDbConnection directo: una conexión por petición.
+            builder.Services.AddScoped<IDbConnection>(sp =>
+                sp.GetRequiredService<IConexionFactory>().CrearConexion());
+
+            // Capa Query (lecturas)
+            builder.Services.AddScoped<ICategoriaQueries, CategoriaQueries>();
+            builder.Services.AddScoped<IProductoQueries, ProductoQueries>();
+            builder.Services.AddScoped<IMesaQueries, MesaQueries>();
+            builder.Services.AddScoped<IPedidoQueries, PedidoQueries>();
+
+            // Capa Repository (escritura)
+            builder.Services.AddScoped<IPedidoRepository, PedidoRepository>();
+            builder.Services.AddScoped<IDetallePedidoRepository, DetallePedidoRepository>();
 
             var app = builder.Build();
 
-            // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
