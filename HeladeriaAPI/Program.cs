@@ -1,3 +1,9 @@
+using System.Data;
+using System.Reflection;
+using HeladeriaAPI.Query.Implements;
+using HeladeriaAPI.Query.Interfaces;
+using HeladeriaAPI.Repository.Implements;
+using HeladeriaAPI.Repository.Interfaces;
 
 namespace HeladeriaAPI
 {
@@ -7,25 +13,47 @@ namespace HeladeriaAPI
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
-
             builder.Services.AddControllers();
-            // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-            builder.Services.AddOpenApi();
+
+            // Swagger con comentarios XML
+            builder.Services.AddEndpointsApiExplorer();
+            builder.Services.AddSwaggerGen(c =>
+            {
+                var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+                c.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFile));
+            });
+
+            // Conexión a la base de datos
+            var cadenaConexion = builder.Configuration.GetConnectionString("DefaultConnection")
+                ?? throw new InvalidOperationException(
+                    "Falta ConnectionStrings:DefaultConnection en appsettings.json");
+
+            builder.Services.AddSingleton<IConexionFactory>(new ConexionFactory(cadenaConexion));
+
+            // Los Repositories reciben un IDbConnection directo: una conexión por petición.
+            builder.Services.AddScoped<IDbConnection>(sp =>
+                sp.GetRequiredService<IConexionFactory>().CrearConexion());
+
+            // Capa Query (lecturas)
+            builder.Services.AddScoped<ICategoriaQueries, CategoriaQueries>();
+            builder.Services.AddScoped<IProductoQueries, ProductoQueries>();
+            builder.Services.AddScoped<IMesaQueries, MesaQueries>();
+            builder.Services.AddScoped<IPedidoQueries, PedidoQueries>();
+
+            // Capa Repository (escritura)
+            builder.Services.AddScoped<IPedidoRepository, PedidoRepository>();
+            builder.Services.AddScoped<IDetallePedidoRepository, DetallePedidoRepository>();
 
             var app = builder.Build();
 
-            // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
-                app.MapOpenApi();
+                app.UseSwagger();
+                app.UseSwaggerUI();
             }
 
             app.UseHttpsRedirection();
-
             app.UseAuthorization();
-
-
             app.MapControllers();
 
             app.Run();
