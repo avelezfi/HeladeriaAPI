@@ -1,0 +1,10 @@
+.resumen { display: flex; flex-direction: column; gap: var(--espacio-4); }
+.encabezado { display: flex; justify-content: space-between; align-items: center; gap: var(--espacio-3); }
+.aviso { display: flex; flex-direction: column; align-items: flex-start; gap: var(--espacio-3); padding: var(--espacio-4); border: 2px solid var(--tinta); border-radius: var(--radio-chico); background: var(--rosa-suave); }
+.tarjetas { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: var(--espacio-4); margin: 0; padding: 0; list-style: none; }
+.tarjeta { display: flex; flex-direction: column; gap: var(--espacio-1); padding: var(--espacio-4); border-radius: var(--radio-grande); background: var(--rosa-suave); }
+.tarjeta strong { font-family: var(--fuente-titulo); font-size: var(--titulo-1); }
+.Pendiente { background: var(--estado-pendiente-suave); }
+.EnPreparacion { background: var(--estado-preparacion-suave); }
+.Listo { background: var(--estado-listo-suave); }
+.Entregado { background: var(--blanco); border: 2px solid var(--tinta); }

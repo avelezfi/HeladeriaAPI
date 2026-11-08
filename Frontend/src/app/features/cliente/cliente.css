@@ -1,0 +1,33 @@
+:host {
+  display: block;
+  min-height: 100dvh;
+  max-width: 32rem;
+  margin: 0 auto;
+}
+
+.cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--espacio-4) var(--espacio-5) var(--espacio-2);
+}
+
+.marca {
+  font-family: var(--fuente-titulo);
+  font-weight: 600;
+  font-size: var(--texto-grande);
+  color: var(--tinta);
+  text-decoration: none;
+}
+
+.mesa {
+  padding: var(--espacio-1) var(--espacio-4);
+  border-radius: var(--radio-pildora);
+  background: var(--menta);
+  font-weight: 700;
+  font-size: var(--texto-pequeno);
+}
+
+.contenido {
+  padding: 0 var(--espacio-5) var(--espacio-6);
+}

@@ -1,1 +1,29 @@
-<p>dashboard works!</p>
+<section class="resumen">
+  <div class="encabezado">
+    <h1>Resumen</h1>
+    <button type="button" class="boton boton--secundario" (click)="cargar()">Actualizar</button>
+  </div>
+
+  @if (cargando()) {
+    <p role="status">Cargando resumen…</p>
+  } @else if (error()) {
+    <div class="aviso" role="alert">
+      <p>{{ error() }}</p>
+      <button type="button" class="boton boton--secundario" (click)="cargar()">Reintentar</button>
+    </div>
+  } @else {
+    <ul class="tarjetas">
+      <li class="tarjeta"><span>Pedidos en total</span><strong>{{ totalPedidos() }}</strong></li>
+      <li class="tarjeta"><span>Ventas (pedidos entregados)</span><strong>{{ ventas() | pesos }}</strong></li>
+      <li class="tarjeta"><span>Productos disponibles</span><strong>{{ productosDisponibles() }}</strong></li>
+      <li class="tarjeta"><span>Mesas</span><strong>{{ cantidadMesas() }}</strong></li>
+    </ul>
+
+    <h2>Pedidos por estado</h2>
+    <ul class="tarjetas">
+      @for (e of porEstado(); track e.estado) {
+        <li class="tarjeta" [class]="'tarjeta ' + e.estado.replace(' ', '')"><span>{{ e.texto }}</span><strong>{{ e.cantidad }}</strong></li>
+      }
+    </ul>
+  }
+</section>

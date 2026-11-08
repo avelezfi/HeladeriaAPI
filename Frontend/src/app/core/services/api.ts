@@ -1,13 +1,13 @@
-
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
 })
 export class Api {
 
-  private readonly baseUrl = 'https://localhost:7070/api';
+  private readonly baseUrl = environment.apiUrl;
 
   constructor(private http: HttpClient) { }
 
@@ -15,11 +15,11 @@ export class Api {
     return this.http.get<T>(`${this.baseUrl}/${endpoint}`);
   }
 
-  post<T>(endpoint: string, data: any) {
+  post<T>(endpoint: string, data: unknown) {
     return this.http.post<T>(`${this.baseUrl}/${endpoint}`, data);
   }
 
-  put<T>(endpoint: string, data: any) {
+  put<T>(endpoint: string, data: unknown) {
     return this.http.put<T>(`${this.baseUrl}/${endpoint}`, data);
   }
 

@@ -1,0 +1,41 @@
+.inicio {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-4);
+  padding-top: var(--espacio-6);
+}
+
+.ayuda {
+  max-width: 28rem;
+}
+
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-3);
+  padding: var(--espacio-5);
+  border-radius: var(--radio-grande);
+  background: var(--vainilla-suave);
+}
+
+label {
+  font-weight: 700;
+}
+
+.campo {
+  min-height: 56px;
+  padding: 0 var(--espacio-4);
+  border: 2px solid var(--tinta);
+  border-radius: var(--radio-medio);
+  background: var(--blanco);
+  font-family: var(--fuente-titulo);
+  font-size: var(--titulo-2);
+}
+
+.campo[aria-invalid='true'] {
+  border-width: 3px;
+}
+
+.error {
+  font-weight: 700;
+}

@@ -1,1 +1,19 @@
-<p>mesas works!</p>
+<section class="lectura">
+  <h1>Mesas</h1>
+  @if (cargando()) {
+    <p role="status">Cargando mesas…</p>
+  } @else if (error()) {
+    <div class="aviso" role="alert">
+      <p>{{ error() }}</p>
+      <button type="button" class="boton boton--secundario" (click)="cargar()">Reintentar</button>
+    </div>
+  } @else {
+    <ul class="mesas">
+      @for (m of mesas(); track m.mesaId) {
+        <li class="mesa"><strong>Mesa {{ m.numero }}</strong><span>{{ m.estado }}</span></li>
+      } @empty {
+        <li>No hay mesas registradas.</li>
+      }
+    </ul>
+  }
+</section>

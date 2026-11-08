@@ -1,0 +1,46 @@
+<section class="seguimiento">
+  @if (noEncontrado()) {
+    <h1>No encontramos este pedido</h1>
+    <p>Revisa el enlace o vuelve al menú.</p>
+    <a class="boton" routerLink="/menu">Ver el menú</a>
+  } @else if (cargando()) {
+    <p role="status">Buscando tu pedido…</p>
+  } @else if (pedido(); as p) {
+    <h1>Tu pedido #{{ p.pedidoId }}</h1>
+
+    <div class="estado" [class.estado--listo]="p.estado === 'Listo'" role="status" aria-live="polite">
+      <p class="estado__mensaje">{{ mensaje() }}</p>
+    </div>
+
+    @if (errorConexion()) {
+      <p class="aviso" role="alert">No pudimos actualizar el estado. Lo intentamos de nuevo en unos segundos.</p>
+    }
+
+    <ol class="pasos" aria-label="Avance del pedido">
+      @for (paso of pasos; track paso.valor; let i = $index) {
+        <li class="paso" [class.paso--hecho]="i <= posicion()" [attr.aria-current]="i === posicion() ? 'step' : null">
+          <span class="paso__punto" aria-hidden="true">{{ i < posicion() ? '✓' : i + 1 }}</span>
+          <span>{{ paso.texto }}</span>
+        </li>
+      }
+    </ol>
+
+    <h2>Lo que pediste</h2>
+    <ul class="items">
+      @for (d of detalles(); track d.detallePedidoId) {
+        <li>
+          <strong>{{ d.cantidad }} × {{ nombre(d.productoId) }}</strong>
+          @if (d.sabores) { <span>Sabores: {{ d.sabores }}</span> }
+          @if (d.toppings) { <span>Toppings: {{ d.toppings }}</span> }
+          @if (d.observaciones) { <span>Notas: {{ d.observaciones }}</span> }
+        </li>
+      }
+    </ul>
+
+    <p class="total"><span>Total</span><strong>{{ p.total | pesos }}</strong></p>
+
+    <a class="boton boton--secundario" routerLink="/menu">Pedir algo más</a>
+  } @else {
+    <p class="aviso" role="alert">No pudimos cargar tu pedido. Revisa tu conexión e inténtalo de nuevo.</p>
+  }
+</section>

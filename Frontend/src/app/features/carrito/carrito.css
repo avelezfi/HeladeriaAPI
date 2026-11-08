@@ -1,0 +1,125 @@
+.carrito {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-4);
+}
+
+.vacio {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--espacio-3);
+  padding: var(--espacio-5);
+  border-radius: var(--radio-grande);
+  background: var(--vainilla-suave);
+}
+
+.vacio .boton {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.lineas {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.linea {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: var(--espacio-2) var(--espacio-3);
+  align-items: center;
+  padding: var(--espacio-4);
+  border-radius: var(--radio-medio);
+  background: var(--rosa-suave);
+}
+
+.linea__datos {
+  grid-column: 1 / -1;
+}
+
+.linea__datos h2 {
+  font-size: var(--texto-grande);
+}
+
+.linea__datos p {
+  font-size: var(--texto-pequeno);
+}
+
+.linea__cantidad {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-2);
+}
+
+.paso {
+  width: var(--alto-tactil);
+  height: var(--alto-tactil);
+  border: 2px solid var(--tinta);
+  border-radius: var(--radio-pildora);
+  background: var(--blanco);
+  font-size: var(--texto-grande);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.cantidad {
+  min-width: 1.5rem;
+  text-align: center;
+  font-weight: 700;
+}
+
+.linea__subtotal {
+  justify-self: end;
+  font-weight: 700;
+}
+
+.quitar {
+  padding: 0 var(--espacio-2);
+  min-height: var(--alto-tactil);
+  border: 0;
+  background: none;
+  font-size: var(--texto-pequeno);
+  text-decoration: underline;
+}
+
+.total {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding-top: var(--espacio-3);
+  border-top: 2px solid var(--tinta);
+  font-size: var(--texto-grande);
+}
+
+.total strong {
+  font-family: var(--fuente-titulo);
+  font-size: var(--titulo-2);
+}
+
+.seguir {
+  align-self: flex-start;
+  color: var(--tinta);
+  min-height: var(--alto-tactil);
+  display: inline-flex;
+  align-items: center;
+  font-weight: 700;
+}
+
+.confirmar {
+  min-height: 56px;
+  font-size: var(--texto-grande);
+}
+
+.error {
+  padding: var(--espacio-3) var(--espacio-4);
+  border: 2px solid var(--tinta);
+  border-radius: var(--radio-chico);
+  background: var(--rosa-suave);
+  font-weight: 700;
+}

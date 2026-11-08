@@ -1,1 +1,147 @@
-/* You can add global styles to this file, and also import other style files */
+/* ==========================================================================
+   HeladApp – estilos globales
+   Paleta tomada del documento del proyecto (rosa, menta, vainilla sobre
+   blanco). Los pasteles se usan como superficies; el texto y los botones
+   principales usan la tinta oscura para tener contraste suficiente.
+   ========================================================================== */
+
+:root {
+  /* Color */
+  --tinta: #3b2230;
+  --blanco: #ffffff;
+  --rosa: #f4c0d1;
+  --rosa-suave: #fbe4ec;
+  --menta: #9fe1cb;
+  --menta-suave: #ddf5ec;
+  --vainilla: #fac775;
+  --vainilla-suave: #fef1d6;
+
+  /* Color por estado del pedido */
+  --estado-pendiente: var(--vainilla);
+  --estado-pendiente-suave: var(--vainilla-suave);
+  --estado-preparacion: var(--rosa);
+  --estado-preparacion-suave: var(--rosa-suave);
+  --estado-listo: var(--menta);
+  --estado-listo-suave: var(--menta-suave);
+
+  /* Tipografía */
+  --fuente-titulo: 'Fredoka', system-ui, sans-serif;
+  --fuente-texto: 'Nunito', system-ui, sans-serif;
+  --texto-pequeno: 0.875rem;
+  --texto-base: 1rem;
+  --texto-grande: 1.25rem;
+  --titulo-2: 1.5rem;
+  --titulo-1: 2rem;
+
+  /* Espacio y forma */
+  --espacio-1: 0.25rem;
+  --espacio-2: 0.5rem;
+  --espacio-3: 0.75rem;
+  --espacio-4: 1rem;
+  --espacio-5: 1.5rem;
+  --espacio-6: 2rem;
+  --radio-chico: 12px;
+  --radio-medio: 16px;
+  --radio-grande: 24px;
+  --radio-pildora: 999px;
+  --alto-tactil: 44px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--blanco);
+  color: var(--tinta);
+  font-family: var(--fuente-texto);
+  font-size: var(--texto-base);
+  line-height: 1.5;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  font-family: var(--fuente-titulo);
+  font-weight: 600;
+  line-height: 1.15;
+}
+
+h1 { font-size: var(--titulo-1); }
+h2 { font-size: var(--titulo-2); font-weight: 500; }
+h3 { font-size: var(--texto-grande); font-weight: 500; }
+
+p { margin: 0; }
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+/* Foco visible para quien navega con teclado */
+:focus-visible {
+  outline: 3px solid var(--tinta);
+  outline-offset: 2px;
+}
+
+/* Botón principal y secundario: mínimo 44 px de alto para uso táctil */
+.boton {
+  min-height: var(--alto-tactil);
+  padding: 0 var(--espacio-5);
+  border: 2px solid var(--tinta);
+  border-radius: var(--radio-medio);
+  background: var(--tinta);
+  color: var(--blanco);
+  font-weight: 700;
+}
+
+.boton--secundario {
+  background: var(--blanco);
+  color: var(--tinta);
+}
+
+.boton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Opción seleccionable (sabores, toppings, categorías) */
+.chip {
+  min-height: var(--alto-tactil);
+  padding: 0 var(--espacio-4);
+  border: 2px solid var(--tinta);
+  border-radius: var(--radio-pildora);
+  background: var(--blanco);
+  font-weight: 600;
+}
+
+.chip[aria-pressed='true'] {
+  background: var(--tinta);
+  color: var(--blanco);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
