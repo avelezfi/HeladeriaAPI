@@ -1,1 +1,54 @@
-<p>preparacion works!</p>
+<section class="cocina">
+  <div class="encabezado">
+    <h1>Cocina</h1>
+    <p class="actualizacion">
+      Se actualiza cada 5 segundos
+      @if (ultimaActualizacion(); as u) { · última vez {{ u.toLocaleTimeString('es-CO') }} }
+    </p>
+  </div>
+
+  @if (errorCarga()) {
+    <p class="aviso" role="alert">No se pudo actualizar la lista. Se intentará de nuevo en unos segundos.</p>
+  }
+  @if (errorAccion()) {
+    <p class="aviso" role="alert">{{ errorAccion() }}</p>
+  }
+
+  @if (cargando()) {
+    <p role="status">Cargando pedidos…</p>
+  } @else {
+    <div class="columnas">
+      @for (col of columnas(); track col.estado) {
+        <section class="columna" [class]="'columna ' + col.estado.replace(' ', '')" [attr.aria-label]="col.titulo">
+          <h2><span>{{ col.titulo }}</span><span class="contador">{{ col.pedidos.length }}</span></h2>
+
+          @for (p of col.pedidos; track p.pedidoId) {
+            <article class="pedido">
+              <div class="pedido__cabecera">
+                <strong class="pedido__mesa">Mesa {{ mesa(p) }}</strong>
+                <span>Pedido {{ p.pedidoId }} · {{ hace(p) }}</span>
+              </div>
+              @for (d of items(p); track d.detallePedidoId) {
+                <div class="item">
+                  <strong>{{ d.cantidad }} × {{ nombre(d.productoId) }}</strong>
+                  @if (d.sabores) { <div>Sabores: {{ d.sabores }}</div> }
+                  @if (d.toppings) { <div>Toppings: {{ d.toppings }}</div> }
+                  @if (d.observaciones) { <div>{{ d.observaciones }}</div> }
+                </div>
+              }
+              <button
+                type="button"
+                class="boton"
+                [class.boton--secundario]="col.estado === 'Listo'"
+                [disabled]="enCurso().has(p.pedidoId)"
+                (click)="avanzar(p)"
+              >{{ col.accion }}</button>
+            </article>
+          } @empty {
+            <p class="vacio">Sin pedidos.</p>
+          }
+        </section>
+      }
+    </div>
+  }
+</section>

@@ -6,4 +6,5 @@ export interface DetallePedido {
   sabores?: string;
   toppings?: string;
   observaciones?: string;
+  precioUnitario: number;
 }

@@ -1,1 +1,28 @@
-<p>productos works!</p>
+<section class="lectura">
+  <h1>Productos</h1>
+  @if (cargando()) {
+    <p role="status">Cargando productos…</p>
+  } @else if (error()) {
+    <div class="aviso" role="alert">
+      <p>{{ error() }}</p>
+      <button type="button" class="boton boton--secundario" (click)="cargar()">Reintentar</button>
+    </div>
+  } @else {
+    <table>
+      <caption class="solo-lectores">Lista de productos</caption>
+      <thead><tr><th scope="col">Producto</th><th scope="col">Categoría</th><th scope="col">Precio</th><th scope="col">Estado</th></tr></thead>
+      <tbody>
+        @for (p of filas(); track p.productoId) {
+          <tr>
+            <th scope="row">{{ p.nombre }}</th>
+            <td>{{ p.categoria }}</td>
+            <td>{{ p.precio | pesos }}</td>
+            <td>{{ p.activo ? 'Disponible' : 'No disponible' }}</td>
+          </tr>
+        } @empty {
+          <tr><td colspan="4">No hay productos registrados.</td></tr>
+        }
+      </tbody>
+    </table>
+  }
+</section>

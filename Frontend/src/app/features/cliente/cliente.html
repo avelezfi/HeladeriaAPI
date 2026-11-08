@@ -1,0 +1,9 @@
+<header class="cabecera">
+  <a class="marca" routerLink="/">HeladApp</a>
+  @if (mesa(); as m) {
+    <span class="mesa">Mesa {{ m.numero }}</span>
+  }
+</header>
+<main class="contenido">
+  <router-outlet />
+</main>

@@ -1,1 +1,78 @@
-<p>pedidos works!</p>
+<section class="pedidos">
+  <div class="encabezado">
+    <h1>Pedidos</h1>
+    <button type="button" class="boton boton--secundario" (click)="cargar()">Actualizar</button>
+  </div>
+
+  @if (cargando()) {
+    <p role="status">Cargando pedidos…</p>
+  } @else if (error()) {
+    <div class="aviso" role="alert">
+      <p>{{ error() }}</p>
+      <button type="button" class="boton boton--secundario" (click)="cargar()">Reintentar</button>
+    </div>
+  } @else {
+    <div class="filtros">
+      <div class="chips" role="group" aria-label="Filtrar por estado">
+        <button type="button" class="chip" [attr.aria-pressed]="filtroEstado() === null" (click)="elegirEstado(null)">Todos</button>
+        @for (e of estados; track e.valor) {
+          <button type="button" class="chip" [attr.aria-pressed]="filtroEstado() === e.valor" (click)="elegirEstado(e.valor)">{{ e.texto }}</button>
+        }
+      </div>
+      <label class="mesa-filtro">
+        Mesa
+        <select (change)="elegirMesa(selectorMesa.value)" #selectorMesa>
+          <option value="">Todas</option>
+          @for (m of mesas(); track m.mesaId) {
+            <option [value]="m.mesaId">Mesa {{ m.numero }}</option>
+          }
+        </select>
+      </label>
+    </div>
+
+    <p class="conteo" aria-live="polite">{{ visibles().length }} {{ visibles().length === 1 ? 'pedido' : 'pedidos' }}</p>
+
+    <ul class="lista">
+      @for (p of visibles(); track p.pedidoId) {
+        <li class="pedido">
+          <div class="pedido__fila">
+            <strong>Pedido {{ p.pedidoId }}</strong>
+            <span>Mesa {{ numeroMesa(p.mesaId) }}</span>
+            <span>{{ p.fecha | date: 'dd/MM/yyyy HH:mm' }}</span>
+            <app-estado [valor]="p.estado" />
+            <strong>{{ p.total | pesos }}</strong>
+            <button
+              type="button"
+              class="boton boton--secundario"
+              [attr.aria-expanded]="abierto() === p.pedidoId"
+              (click)="alternarDetalle(p)"
+            >{{ abierto() === p.pedidoId ? 'Ocultar detalle' : 'Ver detalle' }}</button>
+          </div>
+
+          @if (abierto() === p.pedidoId) {
+            <div class="detalle">
+              @if (cargandoDetalles()) {
+                <p role="status">Cargando detalle…</p>
+              } @else if (errorDetalles()) {
+                <p role="alert">No se pudo cargar el detalle.</p>
+              } @else {
+                <ul>
+                  @for (d of detalles(); track d.detallePedidoId) {
+                    <li>
+                      {{ d.cantidad }} × {{ nombre(d.productoId) }} · {{ d.precioUnitario | pesos }} c/u
+                      @if (d.sabores) { · Sabores: {{ d.sabores }} }
+                      @if (d.toppings) { · Toppings: {{ d.toppings }} }
+                      @if (d.observaciones) { · Notas: {{ d.observaciones }} }
+                    </li>
+                  }
+                </ul>
+              }
+            </div>
+          }
+        </li>
+      } @empty {
+        <li class="vacio">No hay pedidos con estos filtros.</li>
+      }
+    </ul>
+  }
+</section>

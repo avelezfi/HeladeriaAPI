@@ -1,0 +1,13 @@
+<header class="cabecera">
+  <span class="marca">HeladApp · Personal</span>
+  <nav aria-label="Secciones del personal">
+    <ul>
+      @for (e of enlaces; track e.ruta) {
+        <li><a [routerLink]="['/personal', e.ruta]" routerLinkActive="activo" ariaCurrentWhenActive="page">{{ e.texto }}</a></li>
+      }
+    </ul>
+  </nav>
+</header>
+<main class="contenido">
+  <router-outlet />
+</main>

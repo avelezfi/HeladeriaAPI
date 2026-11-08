@@ -1,0 +1,76 @@
+.cocina { display: flex; flex-direction: column; gap: var(--espacio-5); }
+
+.encabezado {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--espacio-2);
+}
+
+.aviso {
+  padding: var(--espacio-3) var(--espacio-4);
+  border: 2px solid var(--tinta);
+  border-radius: var(--radio-chico);
+  background: var(--rosa-suave);
+  font-weight: 700;
+}
+
+.columnas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(17.5rem, 1fr));
+  gap: var(--espacio-5);
+  align-items: start;
+}
+
+.columna {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-3);
+  padding: var(--espacio-4);
+  border-radius: var(--radio-grande);
+}
+
+.Pendiente { background: var(--estado-pendiente-suave); }
+.Pendiente .contador { background: var(--estado-pendiente); }
+.EnPreparacion { background: var(--estado-preparacion-suave); }
+.EnPreparacion .contador { background: var(--estado-preparacion); }
+.Listo { background: var(--estado-listo-suave); }
+.Listo .contador { background: var(--estado-listo); }
+
+h2 { display: flex; justify-content: space-between; align-items: center; }
+
+.contador {
+  min-width: 2rem;
+  padding: 0 var(--espacio-3);
+  border-radius: var(--radio-pildora);
+  text-align: center;
+}
+
+.pedido {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-2);
+  padding: var(--espacio-4);
+  border-radius: var(--radio-medio);
+  background: var(--blanco);
+}
+
+.pedido__cabecera {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--espacio-2);
+  font-size: var(--texto-pequeno);
+}
+
+.pedido__mesa {
+  font-family: var(--fuente-titulo);
+  font-size: var(--titulo-2);
+}
+
+.item div { font-size: var(--texto-pequeno); }
+
+.pedido .boton { min-height: 52px; }
+
+.vacio { color: var(--tinta); font-size: var(--texto-pequeno); }

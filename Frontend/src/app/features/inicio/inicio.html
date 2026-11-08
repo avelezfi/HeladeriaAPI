@@ -1,0 +1,26 @@
+<section class="inicio">
+  <h1>¿En qué mesa estás?</h1>
+  <p class="ayuda">Escribe el número que aparece en tu mesa para ver el menú y hacer tu pedido.</p>
+
+  <form class="formulario" (submit)="ingresar($event, campo.value)">
+    <label for="numero-mesa">Número de mesa</label>
+    <input
+      #campo
+      id="numero-mesa"
+      class="campo"
+      type="text"
+      inputmode="numeric"
+      autocomplete="off"
+      [attr.aria-invalid]="error() ? 'true' : null"
+      [attr.aria-describedby]="error() ? 'error-mesa' : null"
+    />
+
+    @if (error()) {
+      <p id="error-mesa" class="error" role="alert">{{ error() }}</p>
+    }
+
+    <button class="boton" type="submit" [disabled]="cargando()">
+      {{ cargando() ? 'Buscando tu mesa…' : 'Ver el menú' }}
+    </button>
+  </form>
+</section>

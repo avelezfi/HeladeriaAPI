@@ -19,4 +19,8 @@ export class ProductoService {
     return this.api.get<Producto>(`${this.endpoint}/${id}`);
   }
 
+  obtenerPorCategoria(categoriaId: number) {
+    return this.api.get<Producto[]>(`${this.endpoint}/categoria/${categoriaId}`);
+  }
+
 }

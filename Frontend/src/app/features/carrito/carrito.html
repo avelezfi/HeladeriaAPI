@@ -1,0 +1,56 @@
+<section class="carrito">
+  <h1>Tu pedido</h1>
+
+  @if (carrito.lineas().length === 0) {
+    <div class="vacio">
+      <p>Todavía no has agregado nada.</p>
+      <a class="boton" routerLink="/menu">Ver el menú</a>
+    </div>
+  } @else {
+    <ul class="lineas">
+      @for (linea of carrito.lineas(); track linea.id) {
+        <li class="linea">
+          <div class="linea__datos">
+            <h2>{{ linea.producto.nombre }}</h2>
+            @if (linea.sabores.length) {
+              <p>Sabores: {{ linea.sabores.join(', ') }}</p>
+            }
+            @if (linea.toppings.length) {
+              <p>Toppings: {{ linea.toppings.join(', ') }}</p>
+            }
+            @if (linea.observaciones) {
+              <p>Notas: {{ linea.observaciones }}</p>
+            }
+          </div>
+
+          <div class="linea__cantidad" role="group" [attr.aria-label]="'Cantidad de ' + linea.producto.nombre">
+            <button type="button" class="paso" aria-label="Quitar una unidad" (click)="menos(linea)">−</button>
+            <span class="cantidad">{{ linea.cantidad }}</span>
+            <button type="button" class="paso" aria-label="Agregar una unidad" (click)="mas(linea)">+</button>
+          </div>
+
+          <p class="linea__subtotal">
+            {{ linea.cantidad * linea.producto.precio | pesos }}
+          </p>
+
+          <button type="button" class="quitar" [attr.aria-label]="'Quitar ' + linea.producto.nombre + ' del pedido'" (click)="quitar(linea)">Quitar</button>
+        </li>
+      }
+    </ul>
+
+    <p class="total">
+      <span>Total</span>
+      <strong>{{ carrito.total() | pesos }}</strong>
+    </p>
+
+    @if (error()) {
+      <p class="error" role="alert">{{ error() }}</p>
+    }
+
+    <button type="button" class="boton confirmar" [disabled]="enviando()" (click)="confirmar()">
+      {{ enviando() ? 'Enviando tu pedido…' : 'Confirmar pedido' }}
+    </button>
+
+    <a class="seguir" routerLink="/menu">Seguir pidiendo</a>
+  }
+</section>
