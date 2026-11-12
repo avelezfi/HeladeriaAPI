@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using HeladeriaAPI.Models;
 using HeladeriaAPI.Query.Interfaces;
 using HeladeriaAPI.Repository.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HeladeriaAPI.Controllers
@@ -14,30 +15,38 @@ namespace HeladeriaAPI.Controllers
     [Produces("application/json")]
     public class PedidosController : ControllerBase
     {
+        /// <summary>Flujo normal de un pedido, en orden.</summary>
         private static readonly string[] EstadosValidos =
             { "Pendiente", "En Preparacion", "Listo", "Entregado" };
 
+        /// <summary>Estado final de un pedido anulado (fuera del flujo normal).</summary>
+        private const string EstadoCancelado = "Cancelado";
+
         private readonly IPedidoQueries _pedidoQueries;
         private readonly IMesaQueries _mesaQueries;
+        private readonly IProductoQueries _productoQueries;
+        private readonly ITamanoQueries _tamanoQueries;
         private readonly IPedidoRepository _pedidoRepository;
-        private readonly IDetallePedidoRepository _detallePedidoRepository;
 
         public PedidosController(
             IPedidoQueries pedidoQueries,
             IMesaQueries mesaQueries,
-            IPedidoRepository pedidoRepository,
-            IDetallePedidoRepository detallePedidoRepository)
+            IProductoQueries productoQueries,
+            ITamanoQueries tamanoQueries,
+            IPedidoRepository pedidoRepository)
         {
             _pedidoQueries = pedidoQueries;
             _mesaQueries = mesaQueries;
+            _productoQueries = productoQueries;
+            _tamanoQueries = tamanoQueries;
             _pedidoRepository = pedidoRepository;
-            _detallePedidoRepository = detallePedidoRepository;
         }
 
         /// <summary>
         /// Obtiene la lista de todos los pedidos.
         /// </summary>
         /// <response code="200">Devuelve la lista de pedidos.</response>
+        [Authorize]
         [HttpGet]
         [ProducesResponseType(typeof(IEnumerable<Pedido>), StatusCodes.Status200OK)]
         public async Task<IActionResult> ObtenerTodos()
@@ -66,6 +75,7 @@ namespace HeladeriaAPI.Controllers
         /// </summary>
         /// <param name="estado">Estado del pedido (Pendiente, En Preparacion, Listo, Entregado).</param>
         /// <response code="200">Devuelve los pedidos con ese estado.</response>
+        [Authorize]
         [HttpGet("estado/{estado}")]
         [ProducesResponseType(typeof(IEnumerable<Pedido>), StatusCodes.Status200OK)]
         public async Task<IActionResult> ObtenerPorEstado(string estado)
@@ -78,6 +88,7 @@ namespace HeladeriaAPI.Controllers
         /// </summary>
         /// <param name="mesaId">Identificador de la mesa.</param>
         /// <response code="200">Devuelve los pedidos de la mesa.</response>
+        [Authorize]
         [HttpGet("mesa/{mesaId:int}")]
         [ProducesResponseType(typeof(IEnumerable<Pedido>), StatusCodes.Status200OK)]
         public async Task<IActionResult> ObtenerPorMesa(int mesaId)
@@ -98,63 +109,120 @@ namespace HeladeriaAPI.Controllers
         }
 
         /// <summary>
-        /// Crea un pedido con sus detalles. Queda en estado "Pendiente" y el total se calcula solo.
+        /// Crea un pedido con sus detalles. Queda en estado "Pendiente".
+        /// El precio de cada ítem se toma del catálogo (no lo envía el cliente) y el total se calcula solo.
         /// </summary>
         /// <param name="solicitud">Mesa y lista de ítems del pedido.</param>
         /// <response code="201">Pedido creado.</response>
-        /// <response code="400">Los datos enviados no son válidos.</response>
-        /// <response code="404">No existe la mesa indicada.</response>
+        /// <response code="400">Los datos no son válidos, algún producto no está disponible o falta elegir un tamaño válido.</response>
+        /// <response code="404">No existe la mesa o alguno de los productos indicados.</response>
         [HttpPost]
         [ProducesResponseType(typeof(Pedido), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> Crear([FromBody] CrearPedidoRequest solicitud)
+        public Task<IActionResult> Crear([FromBody] CrearPedidoRequest solicitud) =>
+            CrearPedidoAsync(solicitud.MesaId, solicitud.ParaLlevar, solicitud.Detalles, registradoPorId: null);
+
+        /// <summary>
+        /// Registra un pedido desde el personal (por ejemplo, el cliente pidió en el mostrador o al mesero).
+        /// La mesa es opcional: sin mesa es un pedido para llevar. Queda guardado quién lo registró.
+        /// </summary>
+        /// <param name="solicitud">Mesa (opcional) y lista de ítems del pedido.</param>
+        /// <response code="201">Pedido registrado.</response>
+        /// <response code="400">Los datos no son válidos, algún producto no está disponible o falta elegir un tamaño válido.</response>
+        /// <response code="401">No hay sesión del personal.</response>
+        /// <response code="404">No existe la mesa o alguno de los productos indicados.</response>
+        [Authorize]
+        [HttpPost("personal")]
+        [ProducesResponseType(typeof(Pedido), StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public Task<IActionResult> RegistrarPorPersonal([FromBody] RegistrarPedidoRequest solicitud) =>
+            CrearPedidoAsync(solicitud.MesaId, solicitud.ParaLlevar, solicitud.Detalles, Seguridad.IdUsuario(User));
+
+        /// <summary>
+        /// Lógica común para crear un pedido: valida mesa y productos, toma precios del catálogo
+        /// y guarda pedido y detalles en una sola transacción.
+        /// </summary>
+        private async Task<IActionResult> CrearPedidoAsync(int? mesaId, bool paraLlevar, List<DetalleSolicitud> items, int? registradoPorId)
         {
-            var mesa = await _mesaQueries.ObtenerPorIdAsync(solicitud.MesaId);
-            if (mesa is null)
-                return NotFound($"No existe la mesa {solicitud.MesaId}.");
+            if (mesaId is not null && await _mesaQueries.ObtenerPorIdAsync(mesaId.Value) is null)
+                return NotFound($"No existe la mesa {mesaId}.");
 
-            var pedidoId = await _pedidoRepository.CrearAsync(new Pedido { MesaId = solicitud.MesaId });
+            var productos = (await _productoQueries.ObtenerPorIdsAsync(
+                    items.Select(d => d.ProductoId)))
+                .ToDictionary(p => p.ProductoId);
 
-            try
+            // Tamaños de todas las categorías involucradas, en una sola consulta.
+            var tamanos = (await _tamanoQueries.ObtenerPorCategoriasAsync(
+                    productos.Values.Select(p => p.CategoriaId)))
+                .ToList();
+
+            var detalles = new List<DetallePedido>();
+            foreach (var item in items)
             {
-                foreach (var item in solicitud.Detalles)
+                if (!productos.TryGetValue(item.ProductoId, out var producto))
+                    return NotFound($"No existe el producto {item.ProductoId}.");
+
+                if (!producto.Activo)
+                    return BadRequest($"El producto \"{producto.Nombre}\" no está disponible.");
+
+                var tamanosDelProducto = tamanos
+                    .Where(t => t.CategoriaId == producto.CategoriaId && t.Activo)
+                    .ToList();
+
+                Tamano? tamano = null;
+                if (item.TamanoId is not null)
                 {
-                    await _detallePedidoRepository.AgregarDetalleAsync(new DetallePedido
-                    {
-                        PedidoId = pedidoId,
-                        ProductoId = item.ProductoId,
-                        Cantidad = item.Cantidad,
-                        PrecioUnitario = item.PrecioUnitario,
-                        Sabores = item.Sabores,
-                        Toppings = item.Toppings,
-                        Observaciones = item.Observaciones
-                    });
+                    tamano = tamanosDelProducto.FirstOrDefault(t => t.TamanoId == item.TamanoId);
+                    if (tamano is null)
+                        return BadRequest($"El tamaño {item.TamanoId} no está disponible para \"{producto.Nombre}\".");
                 }
+                else if (tamanosDelProducto.Count > 0)
+                {
+                    var opciones = string.Join(", ", tamanosDelProducto.Select(t => $"{t.Nombre} ({t.TamanoId})"));
+                    return BadRequest($"Elige un tamaño para \"{producto.Nombre}\": {opciones}.");
+                }
+
+                detalles.Add(new DetallePedido
+                {
+                    ProductoId = producto.ProductoId,
+                    TamanoId = tamano?.TamanoId,
+                    Cantidad = item.Cantidad,
+                    // Precio del catálogo: base del producto + adicional del tamaño elegido.
+                    PrecioUnitario = producto.Precio + (tamano?.PrecioAdicional ?? 0),
+                    Sabores = item.Sabores,
+                    Toppings = item.Toppings,
+                    Observaciones = item.Observaciones
+                });
             }
-            catch
-            {
-                // Si falla un detalle, se elimina el pedido para no dejarlo incompleto.
-                await _pedidoRepository.EliminarAsync(pedidoId);
-                throw;
-            }
+
+            // Pedido y detalles se guardan en una sola transacción: o todo o nada.
+            var pedidoId = await _pedidoRepository.CrearConDetallesAsync(
+                // Sin mesa (mostrador) siempre es para llevar.
+                new Pedido { MesaId = mesaId, ParaLlevar = paraLlevar || mesaId is null, RegistradoPorId = registradoPorId }, detalles);
 
             var creado = await _pedidoQueries.ObtenerPorIdAsync(pedidoId);
             return CreatedAtAction(nameof(ObtenerPorId), new { id = pedidoId }, creado);
         }
 
         /// <summary>
-        /// Cambia el estado de un pedido.
+        /// Avanza el estado de un pedido. Solo se permite pasar al siguiente estado del flujo:
+        /// Pendiente → En Preparacion → Listo → Entregado.
         /// </summary>
         /// <param name="id">Identificador del pedido.</param>
         /// <param name="solicitud">Nuevo estado: Pendiente, En Preparacion, Listo o Entregado.</param>
         /// <response code="204">Estado actualizado.</response>
         /// <response code="400">El estado no es válido.</response>
         /// <response code="404">No existe un pedido con ese id.</response>
+        /// <response code="409">El cambio no respeta el orden del flujo (por ejemplo, retroceder o saltar un paso).</response>
+        [Authorize]
         [HttpPut("{id:int}/estado")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
         public async Task<IActionResult> ActualizarEstado(int id, [FromBody] ActualizarEstadoRequest solicitud)
         {
             var estado = EstadosValidos.FirstOrDefault(e =>
@@ -163,8 +231,61 @@ namespace HeladeriaAPI.Controllers
             if (estado is null)
                 return BadRequest($"Estado no válido. Valores permitidos: {string.Join(", ", EstadosValidos)}.");
 
-            var actualizado = await _pedidoRepository.ActualizarEstadoAsync(id, estado);
-            if (!actualizado) return NotFound();
+            var pedido = await _pedidoQueries.ObtenerPorIdAsync(id);
+            if (pedido is null) return NotFound();
+
+            if (pedido.Estado == EstadoCancelado)
+                return Conflict("El pedido fue cancelado y no se puede cambiar.");
+
+            var posicionActual = Array.IndexOf(EstadosValidos, pedido.Estado);
+            var posicionNueva = Array.IndexOf(EstadosValidos, estado);
+
+            if (posicionActual < 0 || posicionNueva != posicionActual + 1)
+            {
+                var mensaje = posicionActual == EstadosValidos.Length - 1
+                    ? "El pedido ya fue entregado y no se puede cambiar."
+                    : posicionActual < 0
+                        ? $"El pedido está en un estado desconocido (\"{pedido.Estado}\")."
+                        : $"No se puede pasar de \"{pedido.Estado}\" a \"{estado}\". " +
+                          $"El siguiente estado es \"{EstadosValidos[posicionActual + 1]}\".";
+                return Conflict(mensaje);
+            }
+
+            // Solo cambia si nadie lo modificó entre la lectura y ahora (por ejemplo, otra pantalla lo canceló).
+            if (!await _pedidoRepository.CambiarEstadoAsync(id, pedido.Estado, estado))
+                return Conflict("Otra persona acaba de cambiar este pedido. Actualiza la pantalla.");
+
+            return NoContent();
+        }
+
+        /// <summary>
+        /// Cancela un pedido. Solo se puede mientras está "Pendiente" (antes de que la cocina empiece a prepararlo).
+        /// Un pedido cancelado no cuenta en las ventas ni deja la mesa ocupada.
+        /// </summary>
+        /// <param name="id">Identificador del pedido.</param>
+        /// <response code="204">Pedido cancelado.</response>
+        /// <response code="401">No hay sesión del personal.</response>
+        /// <response code="404">No existe un pedido con ese id.</response>
+        /// <response code="409">El pedido ya no está pendiente.</response>
+        [Authorize]
+        [HttpPost("{id:int}/cancelar")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
+        public async Task<IActionResult> Cancelar(int id)
+        {
+            var pedido = await _pedidoQueries.ObtenerPorIdAsync(id);
+            if (pedido is null) return NotFound();
+
+            if (pedido.Estado == EstadoCancelado)
+                return Conflict("El pedido ya estaba cancelado.");
+
+            if (pedido.Estado != EstadosValidos[0] ||
+                !await _pedidoRepository.CambiarEstadoAsync(id, EstadosValidos[0], EstadoCancelado))
+            {
+                return Conflict("Solo se pueden cancelar pedidos pendientes: la cocina ya empezó a prepararlo.");
+            }
 
             return NoContent();
         }
@@ -182,6 +303,26 @@ namespace HeladeriaAPI.Controllers
         /// <summary>Ítems del pedido (mínimo uno).</summary>
         [Required, MinLength(1)]
         public List<DetalleSolicitud> Detalles { get; set; } = new();
+
+        /// <summary>El cliente lo quiere para llevar (se empaca). Por defecto, para comer en la mesa.</summary>
+        public bool ParaLlevar { get; set; }
+    }
+
+    /// <summary>
+    /// Datos para que el personal registre un pedido.
+    /// </summary>
+    public class RegistrarPedidoRequest
+    {
+        /// <summary>Mesa del pedido, o null si es de mostrador (siempre para llevar).</summary>
+        [Range(1, int.MaxValue)]
+        public int? MesaId { get; set; }
+
+        /// <summary>Para llevar aunque tenga mesa. Se ignora (es true) si no tiene mesa.</summary>
+        public bool ParaLlevar { get; set; }
+
+        /// <summary>Ítems del pedido (mínimo uno).</summary>
+        [Required, MinLength(1)]
+        public List<DetalleSolicitud> Detalles { get; set; } = new();
     }
 
     /// <summary>
@@ -193,21 +334,27 @@ namespace HeladeriaAPI.Controllers
         [Range(1, int.MaxValue)]
         public int ProductoId { get; set; }
 
+        /// <summary>
+        /// Tamaño elegido (ver <c>GET /api/Productos/{id}</c>). Obligatorio si la categoría
+        /// del producto tiene tamaños activos; se omite si no los tiene.
+        /// </summary>
+        [Range(1, int.MaxValue)]
+        public int? TamanoId { get; set; }
+
         /// <summary>Cantidad solicitada.</summary>
         [Range(1, 1000)]
         public int Cantidad { get; set; }
 
-        /// <summary>Precio por unidad de este ítem.</summary>
-        [Range(0.01, 1000000)]
-        public decimal PrecioUnitario { get; set; }
-
-        /// <summary>Sabores elegidos (ej. "Vainilla, Chocolate").</summary>
+        /// <summary>Sabores elegidos (ej. "Vainilla, Chocolate"). Máximo 200 caracteres.</summary>
+        [MaxLength(200)]
         public string? Sabores { get; set; }
 
-        /// <summary>Toppings o adicionales (ej. "Chispas, Maní").</summary>
+        /// <summary>Toppings o adicionales (ej. "Chispas, Maní"). Máximo 200 caracteres.</summary>
+        [MaxLength(200)]
         public string? Toppings { get; set; }
 
-        /// <summary>Observaciones del cliente (ej. "Sin crema").</summary>
+        /// <summary>Observaciones del cliente (ej. "Sin crema"). Máximo 300 caracteres.</summary>
+        [MaxLength(300)]
         public string? Observaciones { get; set; }
     }
 

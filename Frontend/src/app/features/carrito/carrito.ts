@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { CarritoService, LineaCarrito } from '../../core/services/carrito';
+import { CarritoService, LineaCarrito, precioUnitario } from '../../core/services/carrito';
 import { MesaSesionService } from '../../core/services/mesa-sesion';
 import { PedidoService } from '../../core/services/pedido';
 import { mensajeError } from '../../core/utils/errores';
@@ -20,7 +20,10 @@ export class Carrito {
   private readonly pedidos = inject(PedidoService);
   private readonly router = inject(Router);
 
+  protected readonly precioUnitario = precioUnitario;
   protected readonly enviando = signal(false);
+  /** El cliente elige si lo come en la mesa o se lo empacan para llevar. */
+  protected readonly paraLlevar = signal(false);
   protected readonly error = signal<string | null>(null);
 
   protected mas(linea: LineaCarrito) {
@@ -43,7 +46,7 @@ export class Carrito {
     this.enviando.set(true);
     this.error.set(null);
 
-    this.pedidos.crear(this.carrito.aNuevoPedido(mesa.mesaId)).subscribe({
+    this.pedidos.crear({ ...this.carrito.aNuevoPedido(mesa.mesaId), paraLlevar: this.paraLlevar() }).subscribe({
       next: (pedido) => {
         this.carrito.vaciar();
         this.enviando.set(false);

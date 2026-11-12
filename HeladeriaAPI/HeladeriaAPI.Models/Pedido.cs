@@ -18,9 +18,25 @@ namespace HeladeriaAPI.Models
         public int PedidoId { get; set; }
 
         /// <summary>
-        /// Mesa o punto donde se genera el pedido.
+        /// Mesa donde se genera el pedido, o null si es para llevar (registrado por el personal).
         /// </summary>
-        public int MesaId { get; set; }
+        public int? MesaId { get; set; }
+
+        /// <summary>
+        /// Usuario del personal que registró el pedido, o null si lo hizo el cliente desde la mesa.
+        /// </summary>
+        public int? RegistradoPorId { get; set; }
+
+        /// <summary>
+        /// Se empaca para llevar. Siempre es true si no tiene mesa (pedido de mostrador).
+        /// </summary>
+        public bool ParaLlevar { get; set; }
+
+        /// <summary>
+        /// Nombre de quien lo registró (se calcula con la tabla Usuarios; no es una columna).
+        /// </summary>
+        [Computed]
+        public string? RegistradoPor { get; set; }
 
         /// <summary>
         /// Fecha y hora exacta de registro.
@@ -28,7 +44,7 @@ namespace HeladeriaAPI.Models
         public DateTime Fecha { get; set; }
 
         /// <summary>
-        /// Estado del flujo de preparación (ej. Pendiente, En Preparacion, Listo, Entregado).
+        /// Estado del flujo de preparación (Pendiente, En Preparacion, Listo, Entregado) o Cancelado.
         /// </summary>
         public string Estado { get; set; } = string.Empty;
 

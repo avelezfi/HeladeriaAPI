@@ -1,6 +1,108 @@
 @HeladeriaAPI_HostAddress = http://localhost:5152
 
-GET {{HeladeriaAPI_HostAddress}}/weatherforecast/
+GET {{HeladeriaAPI_HostAddress}}/api/Categorias
 Accept: application/json
+
+###
+
+GET {{HeladeriaAPI_HostAddress}}/api/Productos
+Accept: application/json
+
+###
+
+GET {{HeladeriaAPI_HostAddress}}/api/Mesas
+Accept: application/json
+
+###
+
+# Mesa por su número visible (el que trae el código QR)
+GET {{HeladeriaAPI_HostAddress}}/api/Mesas/numero/3
+Accept: application/json
+
+###
+
+# Productos de una categoría
+GET {{HeladeriaAPI_HostAddress}}/api/Productos?categoriaId=1
+Accept: application/json
+
+###
+
+# Detalle de un producto con los tamaños que se pueden elegir
+GET {{HeladeriaAPI_HostAddress}}/api/Productos/1
+Accept: application/json
+
+###
+
+GET {{HeladeriaAPI_HostAddress}}/api/Tamanos
+Accept: application/json
+
+###
+
+# Inicia sesión como administrador (la cookie queda guardada para las siguientes peticiones).
+# Usuario inicial del script; cambia la contraseña después.
+POST {{HeladeriaAPI_HostAddress}}/api/Auth/login
+Content-Type: application/json
+
+{ "nombreUsuario": "admin", "clave": "HeladApp2026" }
+
+###
+
+GET {{HeladeriaAPI_HostAddress}}/api/Auth/yo
+Accept: application/json
+
+###
+
+# Administración del catálogo (solo administradores)
+POST {{HeladeriaAPI_HostAddress}}/api/Categorias
+Content-Type: application/json
+
+{ "nombre": "Cafetería" }
+
+###
+
+POST {{HeladeriaAPI_HostAddress}}/api/Productos
+Content-Type: application/json
+
+{ "categoriaId": 1, "nombre": "Helado de Mango", "precio": 5200, "activo": true }
+
+###
+
+POST {{HeladeriaAPI_HostAddress}}/api/Tamanos
+Content-Type: application/json
+
+{ "categoriaId": 1, "nombre": "Gigante", "precioAdicional": 6000, "orden": 4, "activo": true }
+
+###
+
+# Lista de pedidos: requiere sesión del personal (ejecuta antes el login de más abajo).
+GET {{HeladeriaAPI_HostAddress}}/api/Pedidos
+Accept: application/json
+
+###
+
+# Crea un pedido. El precio se toma del catálogo (producto + tamaño) y el total se calcula solo.
+POST {{HeladeriaAPI_HostAddress}}/api/Pedidos
+Content-Type: application/json
+
+{
+  "mesaId": 1,
+  "detalles": [
+    { "productoId": 1, "tamanoId": 3, "cantidad": 2, "sabores": "Chocolate", "toppings": "Maní", "observaciones": "Sin crema" },
+    { "productoId": 6, "cantidad": 1 }
+  ]
+}
+
+###
+
+GET {{HeladeriaAPI_HostAddress}}/api/Pedidos/1/detalles
+Accept: application/json
+
+###
+
+# Solo se puede avanzar al siguiente estado: Pendiente -> En Preparacion -> Listo -> Entregado
+PUT {{HeladeriaAPI_HostAddress}}/api/Pedidos/1/estado
+Content-Type: application/json
+
+{ "estado": "En Preparacion" }
 
 ###

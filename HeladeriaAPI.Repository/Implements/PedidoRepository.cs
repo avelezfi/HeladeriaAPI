@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Data;
+using System.Linq;
 using System.Threading.Tasks;
 using Dapper;
 using Dapper.Contrib.Extensions;
@@ -37,6 +39,46 @@ namespace HeladeriaAPI.Repository.Implements
         }
 
         /// <summary>
+        /// Crea un pedido junto con todos sus detalles en una sola transacción: o se guarda todo
+        /// o no se guarda nada. El Total se calcula como la suma de Cantidad x PrecioUnitario.
+        /// </summary>
+        public async Task<int> CrearConDetallesAsync(Pedido pedido, IEnumerable<DetallePedido> detalles)
+        {
+            var lista = detalles.ToList();
+
+            if (pedido.Fecha == default)
+                pedido.Fecha = DateTime.Now;
+
+            if (string.IsNullOrWhiteSpace(pedido.Estado))
+                pedido.Estado = "Pendiente";
+
+            pedido.Total = lista.Sum(d => d.Cantidad * d.PrecioUnitario);
+
+            if (_conexion.State != ConnectionState.Open)
+                _conexion.Open();
+
+            using var transaccion = _conexion.BeginTransaction();
+            try
+            {
+                var pedidoId = (int)await _conexion.InsertAsync(pedido, transaccion);
+
+                foreach (var detalle in lista)
+                {
+                    detalle.PedidoId = pedidoId;
+                    await _conexion.InsertAsync(detalle, transaccion);
+                }
+
+                transaccion.Commit();
+                return pedidoId;
+            }
+            catch
+            {
+                transaccion.Rollback();
+                throw;
+            }
+        }
+
+        /// <summary>
         /// Cambia el estado de un pedido. Devuelve false si el pedido no existe.
         /// </summary>
         public async Task<bool> ActualizarEstadoAsync(int pedidoId, string nuevoEstado)
@@ -47,6 +89,22 @@ namespace HeladeriaAPI.Repository.Implements
                 WHERE PedidoId = @PedidoId;";
 
             var filas = await _conexion.ExecuteAsync(sql, new { Estado = nuevoEstado, PedidoId = pedidoId });
+            return filas > 0;
+        }
+
+        /// <summary>
+        /// Cambia el estado solo si el pedido sigue en <paramref name="estadoActual"/>.
+        /// Evita que dos personas cambien el mismo pedido a la vez (por ejemplo, cancelar mientras
+        /// la cocina empieza a prepararlo): la segunda operación no hace nada y devuelve false.
+        /// </summary>
+        public async Task<bool> CambiarEstadoAsync(int pedidoId, string estadoActual, string nuevoEstado)
+        {
+            const string sql = @"
+                UPDATE Pedidos
+                SET Estado = @Nuevo
+                WHERE PedidoId = @PedidoId AND Estado = @Actual;";
+
+            var filas = await _conexion.ExecuteAsync(sql, new { Nuevo = nuevoEstado, Actual = estadoActual, PedidoId = pedidoId });
             return filas > 0;
         }
 

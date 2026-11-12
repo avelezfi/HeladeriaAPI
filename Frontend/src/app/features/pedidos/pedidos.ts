@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { forkJoin } from 'rxjs';
-import { ESTADOS_PEDIDO, EstadoPedido, etiquetaEstado } from '../../core/models/estado-pedido.model';
+import { EstadoPedido, TODOS_LOS_ESTADOS, etiquetaEstado } from '../../core/models/estado-pedido.model';
 import { DetallePedido } from '../../core/models/detalle-pedido.model';
 import { Mesa } from '../../core/models/mesa.model';
 import { Pedido } from '../../core/models/pedido.model';
@@ -25,17 +25,19 @@ export class Pedidos {
   private readonly mesaService = inject(MesaService);
   private readonly catalogo = inject(CatalogoService);
 
-  protected readonly estados = ESTADOS_PEDIDO.map((valor) => ({ valor, texto: etiquetaEstado(valor) }));
+  protected readonly estados = TODOS_LOS_ESTADOS.map((valor) => ({ valor, texto: etiquetaEstado(valor) }));
 
   protected readonly pedidos = signal<Pedido[]>([]);
   protected readonly mesas = signal<Mesa[]>([]);
   private readonly nombres = signal<Map<number, string>>(new Map());
+  private readonly tamanos = signal<Map<number, string>>(new Map());
 
   protected readonly cargando = signal(true);
   protected readonly error = signal<string | null>(null);
 
   protected readonly filtroEstado = signal<EstadoPedido | null>(null);
-  protected readonly filtroMesa = signal<number | null>(null);
+  /** null = todas; 'llevar' = solo para llevar (de mesa o mostrador); número = una mesa. */
+  protected readonly filtroMesa = signal<number | 'llevar' | null>(null);
 
   protected readonly abierto = signal<number | null>(null);
   protected readonly detalles = signal<DetallePedido[]>([]);
@@ -45,9 +47,12 @@ export class Pedidos {
   protected readonly visibles = computed(() =>
     this.pedidos().filter((p) =>
       (this.filtroEstado() === null || p.estado === this.filtroEstado()) &&
-      (this.filtroMesa() === null || p.mesaId === this.filtroMesa())));
+      (this.filtroMesa() === null ||
+       (this.filtroMesa() === 'llevar' ? !!p.paraLlevar : p.mesaId === this.filtroMesa()))));
 
   constructor() {
+    // Nombres de tamaños aparte: si fallan, el pedido igual se muestra (sin el tamaño).
+    this.catalogo.nombresTamanos$.subscribe({ next: (m) => this.tamanos.set(m), error: () => undefined });
     this.cargar();
   }
 
@@ -72,8 +77,15 @@ export class Pedidos {
     });
   }
 
-  protected numeroMesa(mesaId: number): number {
-    return this.mesas().find((m) => m.mesaId === mesaId)?.numero ?? mesaId;
+  /** "Mesa 3" o "Mostrador". */
+  protected etiquetaMesa(mesaId: number | null): string {
+    return mesaId === null ? 'Mostrador' : `Mesa ${this.mesas().find((m) => m.mesaId === mesaId)?.numero ?? mesaId}`;
+  }
+
+  /** "Helado de Vainilla (Grande)", o solo el nombre si no tiene tamaño. */
+  protected descripcion(d: DetallePedido): string {
+    const tamano = d.tamanoId ? this.tamanos().get(d.tamanoId) : undefined;
+    return tamano ? `${this.nombre(d.productoId)} (${tamano})` : this.nombre(d.productoId);
   }
 
   protected nombre(productoId: number): string {
@@ -85,7 +97,7 @@ export class Pedidos {
   }
 
   protected elegirMesa(valor: string) {
-    this.filtroMesa.set(valor === '' ? null : Number(valor));
+    this.filtroMesa.set(valor === '' ? null : valor === 'llevar' ? 'llevar' : Number(valor));
   }
 
   protected alternarDetalle(p: Pedido) {

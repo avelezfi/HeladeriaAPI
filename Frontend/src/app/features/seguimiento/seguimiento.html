@@ -7,8 +7,24 @@
     <p role="status">Buscando tu pedido…</p>
   } @else if (pedido(); as p) {
     <h1>Tu pedido #{{ p.pedidoId }}</h1>
+    @if (p.paraLlevar) {
+      <p class="etiqueta-llevar">🥡 Para llevar</p>
+    }
 
-    <div class="estado" [class.estado--listo]="p.estado === 'Listo'" role="status" aria-live="polite">
+    @if (aviso(); as tipo) {
+      <div class="listo" role="alert">
+        @if (tipo === 'listo') {
+          <p class="listo__titulo">🍨 ¡Tu pedido está listo!</p>
+          <p>Ya puedes recogerlo o en un momento te lo llevamos a la mesa.</p>
+        } @else {
+          <p class="listo__titulo">🍨 ¡Tu pedido fue entregado!</p>
+          <p>¡Que lo disfrutes!</p>
+        }
+        <button type="button" class="boton" (click)="cerrarAviso()">¡Entendido!</button>
+      </div>
+    }
+
+    <div class="estado" [class.estado--listo]="p.estado === 'Listo'" [class.estado--cancelado]="cancelado()" role="status" aria-live="polite">
       <p class="estado__mensaje">{{ mensaje() }}</p>
     </div>
 
@@ -16,6 +32,7 @@
       <p class="aviso" role="alert">No pudimos actualizar el estado. Lo intentamos de nuevo en unos segundos.</p>
     }
 
+    @if (!cancelado()) {
     <ol class="pasos" aria-label="Avance del pedido">
       @for (paso of pasos; track paso.valor; let i = $index) {
         <li class="paso" [class.paso--hecho]="i <= posicion()" [attr.aria-current]="i === posicion() ? 'step' : null">
@@ -24,12 +41,13 @@
         </li>
       }
     </ol>
+    }
 
     <h2>Lo que pediste</h2>
     <ul class="items">
       @for (d of detalles(); track d.detallePedidoId) {
         <li>
-          <strong>{{ d.cantidad }} × {{ nombre(d.productoId) }}</strong>
+          <strong>{{ d.cantidad }} × {{ descripcion(d) }}</strong>
           @if (d.sabores) { <span>Sabores: {{ d.sabores }}</span> }
           @if (d.toppings) { <span>Toppings: {{ d.toppings }}</span> }
           @if (d.observaciones) { <span>Notas: {{ d.observaciones }}</span> }
