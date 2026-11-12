@@ -18,7 +18,7 @@ Proyecto final del curso **Construcción de Software**, orientado por el profeso
 
 El logo es una [ilustración de Cansu Sarp en Unsplash](https://unsplash.com/photos/rj4qZOnLpnw) (licencia de Unsplash, uso libre).
 
-El historial de commits conserva el trabajo de cada integrante. Juan Gallo mantiene además una copia en [excainer/HeladeriaAPI](https://github.com/excainer/HeladeriaAPI).
+El historial de commits conserva el trabajo de cada integrante.
 
 ## Estructura
 
